@@ -52,8 +52,8 @@ std::string FindWithDefault(
 
 class MockErrorCollector : public MultiFileErrorCollector {
  public:
-  MockErrorCollector() {}
-  ~MockErrorCollector() override {}
+  MockErrorCollector() = default;
+  ~MockErrorCollector() override = default;
 
   std::string text_;
 
@@ -158,7 +158,6 @@ TEST(BootstrapTest, GeneratedFilesMatch) {
 // test Generate in cpp_generator.cc
 TEST(BootstrapTest, OptionNotExist) {
   cpp::CppGenerator generator;
-  DescriptorPool pool;
   GeneratorContext* generator_context = nullptr;
   std::string parameter = "aaa";
   std::string error;

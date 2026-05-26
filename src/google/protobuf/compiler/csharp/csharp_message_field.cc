@@ -10,10 +10,10 @@
 #include <sstream>
 
 #include "google/protobuf/compiler/code_generator.h"
-#include "google/protobuf/descriptor.h"
 #include "google/protobuf/compiler/csharp/csharp_doc_comment.h"
 #include "google/protobuf/compiler/csharp/csharp_helpers.h"
 #include "google/protobuf/compiler/csharp/csharp_options.h"
+#include "google/protobuf/descriptor.h"
 #include "google/protobuf/descriptor.pb.h"
 #include "google/protobuf/io/printer.h"
 
@@ -32,9 +32,7 @@ MessageFieldGenerator::MessageFieldGenerator(const FieldDescriptor* descriptor,
   }
 }
 
-MessageFieldGenerator::~MessageFieldGenerator() {
-
-}
+MessageFieldGenerator::~MessageFieldGenerator() = default;
 
 void MessageFieldGenerator::GenerateMembers(io::Printer* printer) {
   printer->Print(
@@ -185,9 +183,7 @@ MessageOneofFieldGenerator::MessageOneofFieldGenerator(
   SetCommonOneofFieldVariables(&variables_);
 }
 
-MessageOneofFieldGenerator::~MessageOneofFieldGenerator() {
-
-}
+MessageOneofFieldGenerator::~MessageOneofFieldGenerator() = default;
 
 void MessageOneofFieldGenerator::GenerateMembers(io::Printer* printer) {
   WritePropertyDocComment(printer, options(), descriptor_);

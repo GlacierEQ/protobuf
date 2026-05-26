@@ -5,6 +5,11 @@
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 
+#[cfg(not(bzl))]
+mod protos;
+#[cfg(not(bzl))]
+use protos::*;
+
 use enums_rust_proto::{test_map_with_nested_enum, TestMapWithNestedEnum};
 use googletest::prelude::*;
 use map_unittest_rust_proto::{MapEnum, TestMap, TestMapWithMessages};
@@ -422,3 +427,13 @@ generate_map_with_msg_values_tests!(
     (bool, true, false),
     (string, "foo", "bar"),
 );
+
+#[gtest]
+fn test_map_contains_key() {
+    let mut msg = TestMap::new();
+    assert_that!(msg.map_int32_int32().contains_key(42), eq(false));
+
+    msg.map_int32_int32_mut().insert(42, 100);
+    assert_that!(msg.map_int32_int32().contains_key(42), eq(true));
+    assert_that!(msg.map_int32_int32_mut().contains_key(42), eq(true));
+}

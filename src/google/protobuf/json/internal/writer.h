@@ -8,6 +8,7 @@
 #ifndef GOOGLE_PROTOBUF_JSON_INTERNAL_WRITER_H__
 #define GOOGLE_PROTOBUF_JSON_INTERNAL_WRITER_H__
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <tuple>
@@ -50,7 +51,7 @@ struct WriterOptions {
   // What those extensions were is explicitly not documented, beyond what exists
   // in the unit tests; we intend to remove this setting eventually. See
   // b/234868512.
-  bool allow_legacy_syntax = false;
+  bool allow_legacy_nonconformant_behavior = false;
 };
 
 template <typename Tuple, typename F, size_t... i>
@@ -191,6 +192,7 @@ class JsonWriter {
   }
 
   void WriteQuoted(absl::string_view val) { WriteEscapedUtf8(val); }
+  void WriteQuoted(const std::string& val) { WriteEscapedUtf8(val); }
 
   // Tries to write a non-finite double if necessary; returns false if
   // nothing was written.

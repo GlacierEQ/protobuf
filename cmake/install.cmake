@@ -89,9 +89,12 @@ set(protobuf_HEADERS
   ${libprotobuf_hdrs}
   ${libprotoc_public_hdrs}
   ${wkt_protos_files}
+  ${cpp_file_options_proto_proto_srcs}
+  ${json_enumvalue_options_proto_proto_srcs}
   ${cpp_features_proto_proto_srcs}
   ${descriptor_proto_proto_srcs}
   ${plugin_proto_proto_srcs}
+  ${c_sharp_features_proto_proto_srcs}
   ${java_features_proto_proto_srcs}
   ${go_features_proto_proto_srcs}
 )
@@ -109,6 +112,7 @@ endif ()
 set(protobuf_STRIP_PREFIXES
   "/src"
   "/java/core/src/main/resources"
+  "/csharp"
   "/go"
   "/"
 )

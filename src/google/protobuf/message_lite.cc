@@ -17,7 +17,6 @@
 #include <cstdint>
 #include <cstring>
 #include <istream>
-#include <optional>
 #include <ostream>
 #include <string>
 #include <utility>
@@ -72,6 +71,10 @@ void MessageLite::DeleteInstance() {
   internal::SizedDelete(ptr, size);
 }
 
+void MessageLite::CheckHasBitConsistency() const {
+  internal::TcParser::CheckHasBitConsistency(this, GetTcParseTable());
+}
+
 void MessageLite::CheckTypeAndMergeFrom(const MessageLite& other) {
   auto* data = GetClassData();
   auto* other_data = other.GetClassData();
@@ -82,23 +85,15 @@ void MessageLite::CheckTypeAndMergeFrom(const MessageLite& other) {
   data->merge_to_from(*this, other);
 }
 
-void MessageLite::MergeFromWithClassData(const MessageLite& other,
-                                         const internal::ClassData* data) {
-  ABSL_DCHECK(data != nullptr);
-  ABSL_DCHECK(GetClassData() == data && other.GetClassData() == data)
-      << "Invalid call to " << __func__ << ": this=" << GetTypeName()
-      << " other=" << other.GetTypeName()
-      << " data=" << data->prototype->GetTypeName();
-  data->merge_to_from(*this, other);
-}
-
 MessageLite* MessageLite::New(Arena* arena) const {
   auto* data = GetClassData();
+  void* mem = data->message_creator.AllocateMessage(arena);
   // The `instance->New()` expression requires using the actual instance
   // instead of the prototype for the inner function call.
   // Certain custom instances have special per-instance state that needs to be
   // copied.
-  return data->message_creator.New(this, data->prototype, arena);
+  return data->message_creator.PlacementNew(this, data->default_instance(), mem,
+                                            arena);
 }
 
 bool MessageLite::IsInitialized() const {
@@ -118,21 +113,11 @@ absl::string_view MessageLite::GetTypeName() const {
 absl::string_view TypeId::name() const {
   if (!data_->is_lite) {
     // For !LITE messages, we use the descriptor method function.
-    return data_->full().descriptor_methods->get_type_name(data_);
+    return data_->full().descriptor_methods()->get_type_name(data_);
   }
 
-  // For LITE messages, the type name is a char[] just beyond ClassData.
-  return reinterpret_cast<const char*>(data_) + sizeof(internal::ClassData);
-}
-
-void MessageLite::OnDemandRegisterArenaDtor(Arena* arena) {
-  if (arena == nullptr) return;
-  auto* data = GetClassData();
-  ABSL_DCHECK(data != nullptr);
-
-  if (data->on_demand_register_arena_dtor != nullptr) {
-    data->on_demand_register_arena_dtor(*this, *arena);
-  }
+  // For LITE messages, the type name is accessed via ClassDataLite.
+  return static_cast<const internal::ClassDataLite*>(data_)->type_name();
 }
 
 std::string MessageLite::InitializationErrorString() const {
@@ -141,7 +126,8 @@ std::string MessageLite::InitializationErrorString() const {
 
   if (!data->is_lite) {
     // For !LITE messages, we use the descriptor method function.
-    return data->full().descriptor_methods->initialization_error_string(*this);
+    return data->full().descriptor_methods()->initialization_error_string(
+        *this);
   }
 
   return "(cannot determine missing fields for lite message)";
@@ -151,7 +137,7 @@ std::string MessageLite::DebugString() const {
   auto* data = GetClassData();
   ABSL_DCHECK(data != nullptr);
   if (!data->is_lite) {
-    return data->full().descriptor_methods->debug_string(*this);
+    return data->full().descriptor_methods()->debug_string(*this);
   }
 
   return absl::StrCat("MessageLite at 0x", absl::Hex(this));
@@ -197,9 +183,9 @@ inline absl::string_view as_string_view(const void* data, int size) {
 }
 
 // Returns true if all required fields are present / have values.
-inline bool CheckFieldPresence(const internal::ParseContext& ctx,
-                               const MessageLite& msg,
-                               MessageLite::ParseFlags parse_flags) {
+inline bool CheckFieldPresenceImpl(const internal::ParseContext& ctx,
+                                   const MessageLite& msg,
+                                   MessageLite::ParseFlags parse_flags) {
   (void)ctx;  // Parameter is used by Google-internal code.
   if (ABSL_PREDICT_FALSE((parse_flags & MessageLite::kMergePartial) != 0)) {
     return true;
@@ -208,6 +194,13 @@ inline bool CheckFieldPresence(const internal::ParseContext& ctx,
 }
 
 }  // namespace
+
+// Returns true if all required fields are present / have values.
+bool MessageLite::CheckFieldPresence(const internal::ParseContext& ctx,
+                                     const MessageLite& msg,
+                                     MessageLite::ParseFlags parse_flags) {
+  return CheckFieldPresenceImpl(ctx, msg, parse_flags);
+}
 
 void MessageLite::LogInitializationErrorMessage() const {
   ABSL_LOG(ERROR) << InitializationErrorMessage("parse", *this);
@@ -236,7 +229,7 @@ bool MergeFromImpl(absl::string_view input, MessageLite* msg,
   ptr = internal::TcParser::ParseLoop(msg, ptr, &ctx, tc_table);
   // ctx has an explicit limit set (length of string_view).
   if (ABSL_PREDICT_TRUE(ptr && ctx.EndedAtLimit())) {
-    return CheckFieldPresence(ctx, *msg, parse_flags);
+    return CheckFieldPresenceImpl(ctx, *msg, parse_flags);
   }
   return false;
 }
@@ -251,7 +244,7 @@ bool MergeFromImpl(io::ZeroCopyInputStream* input, MessageLite* msg,
   ptr = internal::TcParser::ParseLoop(msg, ptr, &ctx, tc_table);
   // ctx has no explicit limit (hence we end on end of stream)
   if (ABSL_PREDICT_TRUE(ptr && ctx.EndedAtEndOfStream())) {
-    return CheckFieldPresence(ctx, *msg, parse_flags);
+    return CheckFieldPresenceImpl(ctx, *msg, parse_flags);
   }
   return false;
 }
@@ -267,7 +260,7 @@ bool MergeFromImpl(BoundedZCIS input, MessageLite* msg,
   if (ABSL_PREDICT_FALSE(!ptr)) return false;
   ctx.BackUp(ptr);
   if (ABSL_PREDICT_TRUE(ctx.EndedAtLimit())) {
-    return CheckFieldPresence(ctx, *msg, parse_flags);
+    return CheckFieldPresenceImpl(ctx, *msg, parse_flags);
   }
   return false;
 }
@@ -299,7 +292,8 @@ class ZeroCopyCodedInputStream : public io::ZeroCopyInputStream {
   explicit ZeroCopyCodedInputStream(io::CodedInputStream* cis) : cis_(cis) {}
   bool Next(const void** data, int* size) final {
     if (!cis_->GetDirectBufferPointer(data, size)) return false;
-    cis_->Skip(*size);
+    // TODO: Remove this suppression.
+    (void)cis_->Skip(*size);
     return true;
   }
   void BackUp(int count) final { cis_->Advance(-count); }
@@ -345,7 +339,7 @@ bool MessageLite::MergeFromImpl(io::CodedInputStream* input,
   } else {
     input->SetConsumed();
   }
-  return CheckFieldPresence(ctx, *this, parse_flags);
+  return CheckFieldPresenceImpl(ctx, *this, parse_flags);
 }
 
 bool MessageLite::MergePartialFromCodedStream(io::CodedInputStream* input) {
@@ -489,7 +483,8 @@ inline uint8_t* SerializeToArrayImpl(const MessageLite& msg, uint8_t* target,
         &stream, io::CodedOutputStream::IsDefaultSerializationDeterministic(),
         &ptr);
     ptr = msg._InternalSerialize(ptr, &out);
-    out.Trim(ptr);
+    // TODO: Remove this suppression.
+    (void)out.Trim(ptr);
     ABSL_DCHECK(!out.HadError() && stream.ByteCount() == size);
     return target + size;
   } else {
@@ -559,7 +554,8 @@ bool MessageLite::SerializePartialToZeroCopyStream(
       output, io::CodedOutputStream::IsDefaultSerializationDeterministic(),
       &target);
   target = _InternalSerialize(target, &stream);
-  stream.Trim(target);
+  // TODO: Remove this suppression.
+  (void)stream.Trim(target);
   if (stream.HadError()) return false;
   return true;
 }
@@ -665,11 +661,17 @@ bool MessageLite::AppendPartialToString(absl::Cord* output) const {
   // For efficiency, we'd like to pass a size hint to CordOutputStream with
   // the exact total size expected.
   const size_t size = ByteSizeLong();
-  const size_t total_size = size + output->size();
   if (size > INT_MAX) {
     ABSL_LOG(ERROR) << "Exceeded maximum protobuf size of 2GB: " << size;
     return false;
   }
+  const size_t output_size = output->size();
+  if (output_size > SIZE_MAX - size) {
+    ABSL_LOG(ERROR) << "Exceeded maximum Cord size during append: "
+                    << output_size << " + " << size;
+    return false;
+  }
+  const size_t total_size = size + output_size;
 
 
   // Allocate a CordBuffer (which may utilize private capacity in 'output').
@@ -700,7 +702,8 @@ bool MessageLite::AppendPartialToString(absl::Cord* output) const {
       target, static_cast<int>(available.size()), &output_stream,
       io::CodedOutputStream::IsDefaultSerializationDeterministic(), &target);
   target = _InternalSerialize(target, &out);
-  out.Trim(target);
+  // TODO: Remove this suppression.
+  (void)out.Trim(target);
   if (out.HadError()) return false;
   *output = output_stream.Consume();
   ABSL_DCHECK_EQ(output->size(), total_size);
@@ -728,7 +731,6 @@ absl::Cord MessageLite::SerializePartialAsCord() const {
   if (!AppendPartialToString(&output)) output.Clear();
   return output;
 }
-
 
 namespace internal {
 

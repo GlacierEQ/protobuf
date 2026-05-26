@@ -18,6 +18,10 @@ use Google\Protobuf\RepeatedField;
  * sometimes simply referred to as "APIs" in other contexts, such as the name of
  * this message itself. See https://cloud.google.com/apis/design/glossary for
  * detailed terminology.
+ * New usages of this message as an alternative to ServiceDescriptorProto are
+ * strongly discouraged. This message does not reliability preserve all
+ * information necessary to model the schema and preserve semantics. Instead
+ * make use of FileDescriptorSet which preserves the necessary information.
  *
  * Generated from protobuf message <code>google.protobuf.Api</code>
  */
@@ -157,9 +161,9 @@ class Api extends \Google\Protobuf\Internal\Message
      * @param string $var
      * @return $this
      */
-    public function setName($var)
+    public function setName(string $var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->name = $var;
 
         return $this;
@@ -183,7 +187,7 @@ class Api extends \Google\Protobuf\Internal\Message
      * @param \Google\Protobuf\Method[] $var
      * @return $this
      */
-    public function setMethods($var)
+    public function setMethods(array|RepeatedField $var)
     {
         $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \Google\Protobuf\Method::class);
         $this->methods = $arr;
@@ -209,7 +213,7 @@ class Api extends \Google\Protobuf\Internal\Message
      * @param \Google\Protobuf\Option[] $var
      * @return $this
      */
-    public function setOptions($var)
+    public function setOptions(array|RepeatedField $var)
     {
         $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \Google\Protobuf\Option::class);
         $this->options = $arr;
@@ -267,9 +271,9 @@ class Api extends \Google\Protobuf\Internal\Message
      * @param string $var
      * @return $this
      */
-    public function setVersion($var)
+    public function setVersion(string $var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->version = $var;
 
         return $this;
@@ -305,9 +309,8 @@ class Api extends \Google\Protobuf\Internal\Message
      * @param \Google\Protobuf\SourceContext $var
      * @return $this
      */
-    public function setSourceContext($var)
+    public function setSourceContext(\Google\Protobuf\SourceContext|null $var)
     {
-        GPBUtil::checkMessage($var, \Google\Protobuf\SourceContext::class);
         $this->source_context = $var;
 
         return $this;
@@ -331,7 +334,7 @@ class Api extends \Google\Protobuf\Internal\Message
      * @param \Google\Protobuf\Mixin[] $var
      * @return $this
      */
-    public function setMixins($var)
+    public function setMixins(array|RepeatedField $var)
     {
         $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \Google\Protobuf\Mixin::class);
         $this->mixins = $arr;
@@ -343,7 +346,7 @@ class Api extends \Google\Protobuf\Internal\Message
      * The source syntax of the service.
      *
      * Generated from protobuf field <code>.google.protobuf.Syntax syntax = 7;</code>
-     * @return int
+     * @return int one of the values in {@see \Google\Protobuf\Syntax}
      */
     public function getSyntax()
     {
@@ -354,10 +357,10 @@ class Api extends \Google\Protobuf\Internal\Message
      * The source syntax of the service.
      *
      * Generated from protobuf field <code>.google.protobuf.Syntax syntax = 7;</code>
-     * @param int $var
+     * @param int $var one of the values in {@see \Google\Protobuf\Syntax}
      * @return $this
      */
-    public function setSyntax($var)
+    public function setSyntax(int $var)
     {
         GPBUtil::checkEnum($var, \Google\Protobuf\Syntax::class);
         $this->syntax = $var;
@@ -383,9 +386,9 @@ class Api extends \Google\Protobuf\Internal\Message
      * @param string $var
      * @return $this
      */
-    public function setEdition($var)
+    public function setEdition(string $var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->edition = $var;
 
         return $this;

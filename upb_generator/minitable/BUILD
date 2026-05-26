@@ -5,8 +5,9 @@
 # license that can be found in the LICENSE file or at
 # https://developers.google.com/open-source/licenses/bsd
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//bazel/toolchains:proto_lang_toolchain.bzl", "proto_lang_toolchain")
-load("//upb/bazel:build_defs.bzl", "UPB_DEFAULT_CPPOPTS")
+load("//upb/bazel:copts.bzl", "UPB_DEFAULT_CPPOPTS", "UPB_DEFAULT_FEATURES")
 load(
     "//upb_generator:bootstrap_compiler.bzl",
     "bootstrap_cc_binary",
@@ -28,6 +29,7 @@ bootstrap_cc_library(
         "//upb/reflection:reflection",
     ],
     copts = UPB_DEFAULT_CPPOPTS,
+    features = UPB_DEFAULT_FEATURES,
     deps = [
         ":names",
         ":names_internal",
@@ -56,7 +58,8 @@ cc_library(
     srcs = ["names.cc"],
     hdrs = ["names.h"],
     visibility = [
-        "//src/google/protobuf/compiler/hpb:__pkg__",
+        "//hpb_generator:__pkg__",
+        "//src/google/protobuf/compiler/interop:__pkg__",
         "//src/google/protobuf/compiler/rust:__pkg__",
         "//third_party/kotlin/protobuf/generator/native:__pkg__",
         "//upb_generator:__subpackages__",
@@ -93,6 +96,7 @@ bootstrap_cc_binary(
         "//upb/reflection:reflection",
     ],
     copts = UPB_DEFAULT_CPPOPTS,
+    features = UPB_DEFAULT_FEATURES,
     visibility = [
         "//editions/codegen_tests:__pkg__",
         "//net/proto2/contrib/protoc_explorer:__pkg__",
@@ -127,5 +131,5 @@ proto_lang_toolchain(
     plugin_format_flag = "--plugin=protoc-gen-upb_minitable=%s",
     progress_message = "Generating upb minitables",
     runtime = "//upb:generated_code_support",
-    visibility = ["//bazel:__pkg__"],
+    visibility = ["//upb/bazel:__pkg__"],
 )

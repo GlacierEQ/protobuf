@@ -4,6 +4,7 @@
 # license that can be found in the LICENSE file or at
 # https://developers.google.com/open-source/licenses/bsd
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_pkg//pkg:mappings.bzl", "pkg_files", "strip_prefix")
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
@@ -57,6 +58,7 @@ cc_library(
         "//upb/mini_descriptor",
         "//upb/mini_table",
         "//upb/text:debug",
+        "//upb/wire:byte_size",
     ],
 )
 

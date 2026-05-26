@@ -5,11 +5,18 @@
 # license that can be found in the LICENSE file or at
 # https://developers.google.com/open-source/licenses/bsd
 
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_binary")
 load("//bazel:cc_proto_library.bzl", "cc_proto_library")
 load("//bazel:proto_library.bzl", "proto_library")
 load(
-    "//bazel:upb_proto_library.bzl",
+    "//upb/bazel:copts.bzl",
+    "UPB_DEFAULT_CPPOPTS",
+    "UPB_DEFAULT_FEATURES",
+)
+load("//upb/bazel:upb_minitable_proto_library.bzl", "upb_minitable_proto_library")
+load(
+    "//upb/bazel:upb_proto_library.bzl",
     "upb_c_proto_library",
     "upb_proto_reflection_library",
 )
@@ -31,6 +38,11 @@ proto_library(
 
 upb_c_proto_library(
     name = "benchmark_descriptor_upb_proto",
+    deps = [":descriptor_proto"],
+)
+
+upb_minitable_proto_library(
+    name = "benchmark_descriptor_upb_minitable_proto",
     deps = [":descriptor_proto"],
 )
 
@@ -63,10 +75,13 @@ cc_test(
     name = "benchmark",
     testonly = 1,
     srcs = ["benchmark.cc"],
+    copts = UPB_DEFAULT_CPPOPTS,
+    features = UPB_DEFAULT_FEATURES,
     deps = [
         ":ads_upb_proto_reflection",
         ":benchmark_descriptor_cc_proto",
         ":benchmark_descriptor_sv_cc_proto",
+        ":benchmark_descriptor_upb_minitable_proto",
         ":benchmark_descriptor_upb_proto",
         ":benchmark_descriptor_upb_proto_reflection",
         "//src/google/protobuf",
@@ -74,7 +89,9 @@ cc_test(
         "//upb/base",
         "//upb/json",
         "//upb/mem",
+        "//upb/message",
         "//upb/reflection",
+        "//upb/reflection:internal",
         "//upb/wire",
         "@abseil-cpp//absl/container:flat_hash_set",
         "@abseil-cpp//absl/log:absl_check",

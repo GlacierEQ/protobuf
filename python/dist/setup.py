@@ -12,7 +12,7 @@ import glob
 import os
 import sys
 
-from setuptools import setup, Extension, find_namespace_packages
+from setuptools import Extension, find_namespace_packages, setup
 
 
 def GetVersion():
@@ -28,7 +28,7 @@ def GetVersion():
   with open(os.path.join('google', 'protobuf', '__init__.py')) as version_file:
     file_globals = {}
     exec(version_file.read(), file_globals)  # pylint:disable=exec-used
-    return file_globals["__version__"]
+    return file_globals['__version__']
 
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -71,11 +71,11 @@ setup(
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: 3.13',
+        'Programming Language :: Python :: 3.14',
     ],
     packages=find_namespace_packages(include=['google*']),
     install_requires=[],
@@ -88,5 +88,5 @@ setup(
             extra_link_args=extra_link_args,
         )
     ],
-    python_requires='>=3.9',
+    python_requires='>=3.10',
 )

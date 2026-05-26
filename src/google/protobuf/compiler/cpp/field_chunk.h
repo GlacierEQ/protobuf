@@ -45,7 +45,6 @@ GenChunkMask(const std::vector<const FieldDescriptor*>& fields,
 PROTOC_EXPORT uint32_t GenChunkMask(ChunkIterator it, ChunkIterator end,
                                     const std::vector<int>& has_bit_indices);
 
-
 // Breaks down a single chunk of fields into a few chunks that share attributes
 // controlled by "equivalent" predicate. Returns an array of chunks.
 template <typename Predicate>
@@ -55,7 +54,7 @@ std::vector<FieldChunk> CollectFields(
   std::vector<FieldChunk> chunks;
   for (auto field : fields) {
     if (chunks.empty() || !equivalent(chunks.back().fields.back(), field)) {
-      chunks.emplace_back(internal::cpp::HasHasbit(field),
+      chunks.emplace_back(HasHasbit(field, options),
                           IsRarelyPresent(field, options),
                           ShouldSplit(field, options));
     }

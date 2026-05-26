@@ -18,6 +18,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import re
 import sys
 import textwrap
 
@@ -46,6 +47,19 @@ class ExtensionFunctions(object):
   def bundle_fetch(self, *args, **kwargs):
     pass
 
+  def find(self, *args, **kwargs):
+    pass
+
+  def source_archive(self, *args, **kwargs):
+    pass
+
+  def nuget_package(self, *args, **kwargs):
+    pass
+
+
+def empty_func(*args, **kwargs):
+  pass
+
 
 class ModuleFileFunctions(object):
   """A fake MODULE file that we can exec() to get the functions we need."""
@@ -57,6 +71,9 @@ class ModuleFileFunctions(object):
     pass
 
   def bazel_dep(self, name, version, **kwargs):
+    # Strip BCR-specific version suffixes (e.g. 1.17.0.bcr.2 -> 1.17.0)
+    # since they don't correspond to upstream git tags.
+    version = re.sub(r"\.bcr\.\d+", "", version)
     self.converter.toplevel += textwrap.dedent(
         """\
       set(%(name)s-version "%(version)s")
@@ -72,6 +89,9 @@ class ModuleFileFunctions(object):
 
   def use_repo(self, *args, **kwargs):
     pass
+
+  def use_repo_rule(self, *args, **kwargs):
+    return empty_func
 
   def single_version_override(self, *args, **kwargs):
     pass
